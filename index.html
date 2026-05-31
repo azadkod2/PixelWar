@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelWar - International Update</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0813;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            font-size: 36px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ffd700, #ff5858);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255,215,0,0.4);
+        }
+
+        /* Dil Seçici Butonlar */
+        #lang-container {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-lang {
+            background: #1c1730;
+            color: #fff;
+            border: 2px solid #39325c;
+            padding: 6px 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-lang.active-lang {
+            background: #ffaa00;
+            color: #000;
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,170,0,0.5);
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 470px;
+        }
+
+        #ui-container {
+            width: 800px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            visibility: hidden;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            width: 350px;
+        }
+
+        #p2-ui { align-items: flex-end; }
+
+        .bar-container {
+            width: 100%;
+            height: 18px;
+            background-color: #1a1625;
+            border: 2px solid #3d3550;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+            margin-bottom: 5px;
+        }
+
+        .energy-container {
+            width: 75%;
+            height: 10px;
+            background-color: #1a1625;
+            border: 1px solid #ffaa0055;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .health-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #00ff66;
+            transition: width 0.1s ease-out, background-color 0.2s ease;
+        }
+        .energy-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff8800, #ffea00);
+            box-shadow: 0 0 8px #ffaa00;
+            transition: width 0.1s ease-out;
+        }
+
+        .player-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .overlay-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 8, 20, 0.96);
+            border: 3px solid #6b5728;
+            border-radius: 16px;
+            padding: 25px 40px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255,170,0,0.15);
+            z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+
+        #main-menu { width: 400px; }
+        #game-over-screen { display: none; width: 400px; }
+        #costume-menu { display: none; width: 680px; }
+        #stage-menu { display: none; width: 500px; }
+
+        .selection-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .player-select-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px dashed #444;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .player-select-box.active-p1 { border-color: #00c6ff; background: rgba(0, 198, 255, 0.02); }
+        .player-select-box.active-p2 { border-color: #ff5858; background: rgba(255, 88, 88, 0.02); }
+
+        .select-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .costume-options, .sub-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-costume, .btn-grid {
+            background: #1c1730;
+            color: #aaa;
+            border: 2px solid #39325c;
+            padding: 9px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .p1-selected { background: #0072ff !important; color: white !important; border-color: #fff !important; box-shadow: 0 0 10px rgba(0,114,255,0.5); }
+        .p2-selected { background: #9b0000 !important; color: white !important; border-color: #fff !important; box-shadow: 0 0 10px rgba(155,0,0,0.5); }
+        .stage-selected { background: #ffaa00 !important; color: black !important; border-color: #fff !important; box-shadow: 0 0 15px rgba(255,170,0,0.6); }
+
+        .menu-title {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-menu {
+            background: linear-gradient(135deg, #1f1c2c, #59527a);
+            color: white;
+            border: 2px solid #555;
+            padding: 13px 0;
+            width: 100%;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .btn-menu:hover {
+            background: linear-gradient(135deg, #ffaa00, #ff5858);
+            border-color: #fff;
+            transform: scale(1.02);
+            color: black;
+        }
+
+        .btn-start-fight { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; font-size: 17px; border-color: #fff; }
+        .btn-start-fight:hover { box-shadow: 0 0 25px rgba(255,170,0,0.7); color: black; }
+        .btn-restart { background: linear-gradient(135deg, #f857a6, #ff5858); border-color: #ff5858; }
+
+        canvas {
+            border: 3px solid #3d3522;
+            border-radius: 8px;
+            box-shadow: 0px 15px 40px rgba(0,0,0,0.9);
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PixelWar</h1>
+
+    <!-- Dil Değiştirme Alanı -->
+    <div id="lang-container">
+        <button id="lang-tr" class="btn-lang active-lang" onclick="setLanguage('tr')">🇹🇷 TR</button>
+        <button id="lang-en" class="btn-lang" onclick="setLanguage('en')">🇺🇸 EN</button>
+    </div>
+
+    <div id="game-container">
+        <!-- ÜST UI BARLARI -->
+        <div id="ui-container">
+            <div id="p1-ui" class="player-info">
+                <div id="p1-controls-text" class="player-name" style="color: #00c6ff;">P1 [A-D-W] • Vur: [Q] • ULTİ: [E]</div>
+                <div class="bar-container"><div id="p1-health" class="health-bar"></div></div>
+                <div class="energy-container"><div id="p1-energy" class="energy-bar"></div></div>
+            </div>
+            
+            <div id="p2-ui" class="player-info">
+                <div id="p2-controls-text" class="player-name" style="color: #ff5858;">P2 [← → ↑] • Vur: [↓] • ULTİ: [Shift]</div>
+                <div class="bar-container"><div id="p2-health" class="health-bar"></div></div>
+                <div class="energy-container"><div id="p2-energy" class="energy-bar"></div></div>
+            </div>
+        </div>
+
+        <!-- ANA MENÜ -->
+        <div id="main-menu" class="overlay-screen">
+            <div id="mm-title" class="menu-title">MOD SEÇİN</div>
+            <button id="btn-single" class="btn-menu" onclick="selectMode('single')">Tek Oyuncu (vs BOT)</button>
+            <button id="btn-multi" class="btn-menu" onclick="selectMode('multi')">İki Oyuncu (1v1)</button>
+        </div>
+
+        <!-- KOSTÜM MENÜSÜ -->
+        <div id="costume-menu" class="overlay-screen">
+            <div id="cm-title" class="menu-title">KOSTÜM SEÇİMİ</div>
+            <div class="selection-container">
+                <div class="player-select-box active-p1">
+                    <div id="p1-title" class="select-title" style="color: #00c6ff;">Mavi Oyuncu</div>
+                    <div class="costume-options">
+                        <button id="p1-c-classic" class="btn-costume p1-selected" onclick="chooseCostume(1, 'classic')">🛡️ Klasik (Kalkan)</button>
+                        <button id="p1-c-monkey" class="btn-costume" onclick="chooseCostume(1, 'monkey')">🍌 Maymun (Bomba)</button>
+                        <button id="p1-c-boxer" class="btn-costume" onclick="chooseCostume(1, 'boxer')">🥊 Boksör (Şok)</button>
+                        <button id="p1-c-bomb" class="btn-costume" onclick="chooseCostume(1, 'bomb')">💣 Bomba Kafa (Kamikaze)</button>
+                        <button id="p1-c-golem" class="btn-costume" onclick="chooseCostume(1, 'golem')">🪨 Golem (Sarsıntı)</button>
+                    </div>
+                </div>
+
+                <div class="player-select-box active-p2">
+                    <div id="p2-panel-title" class="select-title" style="color: #ff5858;">Kırmızı Oyuncu</div>
+                    <div id="p2-costume-opts" class="costume-options">
+                        <button id="p2-c-classic" class="btn-costume p2-selected" onclick="chooseCostume(2, 'classic')">🛡️ Klasik (Kalkan)</button>
+                        <button id="p2-c-monkey" class="btn-costume" onclick="chooseCostume(2, 'monkey')">🍌 Maymun (Bomba)</button>
+                        <button id="p2-c-boxer" class="btn-costume" onclick="chooseCostume(2, 'boxer')">🥊 Boksör (Şok)</button>
+                        <button id="p2-c-bomb" class="btn-costume" onclick="chooseCostume(2, 'bomb')">💣 Bomba Kafa (Kamikaze)</button>
+                        <button id="p2-c-golem" class="btn-costume" onclick="chooseCostume(2, 'golem')">🪨 Golem (Sarsıntı)</button>
+                    </div>
+                    <div id="ai-difficulty-box" style="display:none; margin-top:10px; border-top:1px solid #333; padding-top:5px;">
+                        <div id="bot-diff-title" class="select-title" style="color:#aaa; font-size:11px; margin-bottom:5px;">Bot Zorluğu</div>
+                        <div style="display:flex; gap:4px;">
+                            <button id="diff-easy" style="padding:5px; font-size:10px;" class="btn-costume p2-selected" onclick="chooseDifficulty('easy')">Kolay</button>
+                            <button id="diff-medium" style="padding:5px; font-size:10px;" class="btn-costume" onclick="chooseDifficulty('medium')">Orta</button>
+                            <button id="diff-hard" style="padding:5px; font-size:10px;" class="btn-costume" onclick="chooseDifficulty('hard')">Zor</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-go-stage" class="btn-menu" onclick="goToStageSelect()">HARİTA SEÇİMİNE GEÇ →</button>
+        </div>
+
+        <!-- HARİTA MENÜSÜ -->
+        <div id="stage-menu" class="overlay-screen">
+            <div id="sm-title" class="menu-title">ARENA SEÇİN</div>
+            <div class="sub-options" style="margin-bottom:20px;">
+                <button id="stg-neon" class="btn-grid" onclick="chooseStage('neon')">🌆 Neon Arena (Klasik + Seyirci)</button>
+                <button id="stg-lava" class="btn-grid" onclick="chooseStage('lava')">🌋 Lav Fabrikası (Zemin Tehlikesi!)</button>
+                <button id="stg-moon" class="btn-grid" onclick="chooseStage('moon')">🌙 Ay Üssü (Merkezi Canavar Gözü!)</button>
+                <button id="stg-colosseum" class="btn-grid stage-selected" onclick="chooseStage('colosseum')">🏛️ Roma Kolezyumu (Seyirci Desteği!)</button>
+            </div>
+            <button id="btn-start" class="btn-menu btn-start-fight" onclick="finalizeAndStart()">DÖVÜŞÜ BAŞLAT!</button>
+        </div>
+
+        <!-- OYUN BİTTİ EKRANI -->
+        <div id="game-over-screen" class="overlay-screen">
+            <div id="winner-text" class="menu-title" style="font-size: 26px;">KAZANAN</div>
+            <button id="btn-restart" class="btn-menu btn-restart" onclick="restartToMenu()">Ana Menüye Dön</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="400" tabindex="1"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // DİL VERİ TABANI
+        let currentLang = 'tr';
+        const langData = {
+            tr: {
+                mmTitle: "MOD SEÇİN", btnSingle: "Tek Oyuncu (vs BOT)", btnMulti: "İki Oyuncu (1v1)",
+                cmTitle: "KOSTÜM SEÇİMİ", p1Title: "Mavi Oyuncu", p2Title: "Kırmızı Oyuncu", p2BotTitle: "Bot Ayarları",
+                cClassic: "🛡️ Klasik (Kalkan)", cMonkey: "🍌 Maymun (Bomba)", cBoxer: "🥊 Boksör (Şok)", cBomb: "💣 Bomba Kafa (Kamikaze)", cGolem: "🪨 Golem (Sarsıntı)",
+                botDiffTitle: "Bot Zorluğu", diffEasy: "Kolay", diffMedium: "Orta", diffHard: "Zor",
+                btnGoStage: "HARİTA SEÇİMİNE GEÇ →", smTitle: "ARENA SEÇİN",
+                stgNeon: "🌆 Neon Arena (Klasik + Seyirci)", stgLava: "🌋 Lav Fabrikası (Zemin Tehlikesi!)", stgMoon: "🌙 Ay Üssü (Merkezi Canavar Gözü!)", stgColosseum: "🏛️ Roma Kolezyumu (Seyirci Desteği!)",
+                btnStart: "DÖVÜŞÜ BAŞLAT!", btnRestart: "Ana Menüye Dön",
+                p1Controls: "P1 [A-D-W] • Vur: [Q] • ULTİ: [E]", p2Controls: "P2 [← → ↑] • Vur: [↓] • ULTİ: [Shift]",
+                botName: "YAPAY ZEKA", draw: "BERABERE!", p1Win: "MAVİ OYUNCU KAZANDI!", p2Win: "KIRMIZI KAZANDI!", botWin: "BOT KAZANDI!"
+            },
+            en: {
+                mmTitle: "SELECT MODE", btnSingle: "Single Player (vs BOT)", btnMulti: "Two Players (1v1)",
+                cmTitle: "SELECT COSTUME", p1Title: "Blue Player", p2Title: "Red Player", p2BotTitle: "Bot Settings",
+                cClassic: "🛡️ Classic (Shield)", cMonkey: "🍌 Monkey (Bomb)", cBoxer: "🥊 Boxer (Shock)", cBomb: "💣 Bomb Head (Kamikaze)", cGolem: "🪨 Golem (Earthquake)",
+                botDiffTitle: "Bot Difficulty", diffEasy: "Easy", diffMedium: "Medium", diffHard: "Hard",
+                btnGoStage: "GO TO STAGE SELECT →", smTitle: "SELECT ARENA",
+                stgNeon: "🌆 Neon Arena (Classic + Crowd)", stgLava: "🌋 Lava Factory (Floor Danger!)", stgMoon: "🌙 Moon Base (Monster Eye!)", stgColosseum: "🏛️ Rome Colosseum (Crowd Support!)",
+                btnStart: "START FIGHT!", btnRestart: "Back to Main Menu",
+                p1Controls: "P1 [A-D-W] • Hit: [Q] • ULTI: [E]", p2Controls: "P2 [← → ↑] • Hit: [↓] • ULTI: [Shift]",
+                botName: "AI BOT", draw: "DRAW!", p1Win: "BLUE PLAYER WINS!", p2Win: "RED PLAYER WINS!", botWin: "BOT WINS!"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('lang-tr').classList.toggle('active-lang', lang === 'tr');
+            document.getElementById('lang-en').classList.toggle('active-lang', lang === 'en');
+
+            const d = langData[lang];
+            document.getElementById('mm-title').textContent = d.mmTitle;
+            document.getElementById('btn-single').textContent = d.btnSingle;
+            document.getElementById('btn-multi').textContent = d.btnMulti;
+            document.getElementById('cm-title').textContent = d.cmTitle;
+            document.getElementById('p1-title').textContent = d.p1Title;
+            document.getElementById('p2-panel-title').textContent = gameMode === 'single' ? d.p2BotTitle : d.p2Title;
+            
+            // Kostümler
+            ['p1', 'p2'].forEach(p => {
+                document.getElementById(`${p}-c-classic`).textContent = d.cClassic;
+                document.getElementById(`${p}-c-monkey`).textContent = d.cMonkey;
+                document.getElementById(`${p}-c-boxer`).textContent = d.cBoxer;
+                document.getElementById(`${p}-c-bomb`).textContent = d.cBomb;
+                document.getElementById(`${p}-c-golem`).textContent = d.cGolem;
+            });
+
+            document.getElementById('bot-diff-title').textContent = d.botDiffTitle;
+            document.getElementById('diff-easy').textContent = d.diffEasy;
+            document.getElementById('diff-medium').textContent = d.diffMedium;
+            document.getElementById('diff-hard').textContent = d.diffHard;
+            
+            document.getElementById('btn-go-stage').textContent = d.btnGoStage;
+            document.getElementById('sm-title').textContent = d.smTitle;
+            
+            // Haritalar
+            document.getElementById('stg-neon').textContent = d.stgNeon;
+            document.getElementById('stg-lava').textContent = d.stgLava;
+            document.getElementById('stg-moon').textContent = d.stgMoon;
+            document.getElementById('stg-colosseum').textContent = d.stgColosseum;
+            
+            document.getElementById('btn-start').textContent = d.btnStart;
+            document.getElementById('btn-restart').textContent = d.btnRestart;
+
+            // Kontroller UI text
+            document.getElementById('p1-controls-text').textContent = d.p1Controls;
+            if (gameActive && !gameOver) {
+                if (gameMode === 'single') {
+                    document.getElementById('p2-controls-text').textContent = `${d.botName} (${botDifficulty.toUpperCase()})`;
+                } else {
+                    document.getElementById('p2-controls-text').textContent = d.p2Controls;
+                }
+            } else {
+                document.getElementById('p2-controls-text').textContent = d.p2Controls;
+            }
+        }
+
+        // Oyun Kontrol Değişkenleri
+        let gameOver = false; let gameActive = false; let gameMode = 'single';
+        let p1Costume = 'classic', p2Costume = 'classic'; let selectedStage = 'colosseum', botDifficulty = 'easy';
+        let currentGravity = 0.65, jumpForce = -15; let lavaTimer = 0, lavaActive = false;
+        let globalFrameCount = 0; let screenShakeTime = 0;
+        let moonState = 'idle', moonTimer = 0; let monsterWidth = 100, monsterX = 400 - 50;
+        let colosseumItem = null;
+
+        // Seyirciler
+        const spectators = []; const specColors = ['#ff0055', '#00f2fe', '#ffaa00', '#9b59b6', '#2ecc71', '#e74c3c'];
+        for(let i = 20; i < 780; i += 35) {
+            spectators.push({ x: i, yBase: 225, w: 18, h: 22, color: specColors[Math.floor(Math.random() * specColors.length)], offset: Math.random() * Math.PI * 2 });
+        }
+
+        const keys = { a: false, d: false, arrowleft: false, arrowright: false };
+
+        // Ses Motoru
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                if (type === 'hit') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.12);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+                } else if (type === 'jump') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'ultimate') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(850, audioCtx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.35);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+                } else if (type === 'explosion') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(20, audioCtx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                }
+            } catch(e){}
+        }
+
+        let particles = []; let activeProjectiles = []; let groundSpikes = [];
+
+        function createParticles(x, y, color, count=8) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x, y: y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 3 + 1, alpha: 1, decay: Math.random() * 0.04 + 0.02, color: color
+                });
+            }
+        }
+
+        function updateHealthBarUI(playerId, health) {
+            const bar = document.getElementById(playerId === 1 ? 'p1-health' : 'p2-health');
+            bar.style.width = Math.max(0, health) + '%';
+            if (health >= 70) bar.style.background = 'linear-gradient(90deg, #00ff66, #00aa33)';
+            else if (health >= 35) bar.style.background = 'linear-gradient(90deg, #ffcc00, #ff8800)';
+            else bar.style.background = 'linear-gradient(90deg, #ff3333, #990000)';
+        }
+
+        function drawBackground() {
+            if (selectedStage === 'neon') {
+                ctx.fillStyle = '#0a0815'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#100c20'; ctx.fillRect(0, 190, canvas.width, 50);
+                spectators.forEach(spec => {
+                    let jumpOffset = gameActive && !gameOver ? Math.abs(Math.sin((globalFrameCount / 12) + spec.offset)) * 10 : 0;
+                    ctx.fillStyle = spec.color; ctx.fillRect(spec.x, spec.yBase - jumpOffset, spec.w, spec.h);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(spec.x + 3, spec.yBase - jumpOffset + 4, 3, 3); ctx.fillRect(spec.x + 11, spec.yBase - jumpOffset + 4, 3, 3);
+                });
+                ctx.fillStyle = '#141026'; ctx.fillRect(0, 240, canvas.width, 160);
+            } else if (selectedStage === 'lava') {
+                ctx.fillStyle = '#140300'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#30130a'; ctx.fillRect(150, 60, 30, 340); ctx.fillRect(620, 60, 30, 340);
+            } else if (selectedStage === 'moon') {
+                ctx.fillStyle = '#010105'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#0055ff'; ctx.beginPath(); ctx.arc(700, 80, 35, 0, Math.PI*2); ctx.fill();
+                let eyeY = 180; ctx.fillStyle = '#161326'; ctx.beginPath(); ctx.ellipse(400, eyeY, 45, 25, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = (moonState === 'warning') ? ((Math.floor(globalFrameCount / 8) % 2 === 0) ? '#ff0044' : '#440011') : (moonState === 'attack' ? '#fff' : '#7a12ff');
+                ctx.beginPath(); ctx.arc(400, eyeY, 15, 0, Math.PI * 2); ctx.fill();
+            } else if (selectedStage === 'colosseum') {
+                ctx.fillStyle = '#2c2214'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#423522';
+                for(let i = 40; i < 800; i += 120) {
+                    ctx.fillRect(i, 60, 45, 180); ctx.fillRect(i - 10, 50, 65, 15);
+                }
+                ctx.fillStyle = '#1c150c'; ctx.fillRect(0, 200, canvas.width, 40);
+                spectators.forEach(spec => {
+                    let jumpOffset = gameActive && !gameOver ? Math.abs(Math.sin((globalFrameCount / 15) + spec.offset)) * 7 : 0;
+                    ctx.fillStyle = spec.color; ctx.fillRect(spec.x, spec.yBase - 15 - jumpOffset, spec.w, spec.h);
+                });
+                ctx.fillStyle = '#614e33'; ctx.fillRect(0, 240, canvas.width, 160);
+                ctx.fillStyle = '#ffd700'; ctx.globalAlpha = 0.05; ctx.fillRect(0, 240, canvas.width, 4); ctx.globalAlpha = 1;
+            }
+        }
+
+        class Player {
+            constructor({ position, velocity, id, costume }) {
+                this.id = id; this.position = position; this.velocity = velocity;
+                this.width = 52; this.height = 105; this.health = 100; this.energy = 0;
+                this.facing = id === 1 ? 'right' : 'left'; this.costume = costume;
+                this.attackBox = { position: { x: this.position.x, y: this.position.y }, width: 85, height: 40 };
+                this.isAttacking = false; this.attackTimer = 0; this.attackCooldown = false;
+                this.ultActive = false; this.ultImmune = false; this.ultTimer = 0;
+                this.teamColor = this.id === 1 ? 'rgba(0, 198, 255, 0.3)' : 'rgba(255, 88, 88, 0.3)';
+                this.teamStroke = this.id === 1 ? '#00c6ff' : '#ff5858';
+
+                if (this.costume === 'classic') this.baseColor = this.id === 1 ? '#0052d4' : '#9b0000';
+                else if (this.costume === 'monkey') this.baseColor = this.id === 1 ? '#ffcc00' : '#ff6600';
+                else if (this.costume === 'boxer') this.baseColor = this.id === 1 ? '#00aa50' : '#7b1fa2';
+                else if (this.costume === 'bomb') this.baseColor = '#3a3a3a';
+                else if (this.costume === 'golem') this.baseColor = '#757d8a';
+            }
+
+            draw() {
+                ctx.save(); ctx.fillStyle = this.teamColor; ctx.strokeStyle = this.teamStroke; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.ellipse(this.position.x + this.width/2, this.position.y + this.height, 36, 10, 0, 0, Math.PI * 2);
+                ctx.fill(); ctx.stroke(); ctx.restore();
+
+                if (this.ultImmune) {
+                    ctx.fillStyle = this.id === 1 ? 'rgba(0, 242, 254, 0.25)' : 'rgba(255, 0, 85, 0.25)';
+                    ctx.beginPath(); ctx.arc(this.position.x + this.width/2, this.position.y + this.height/2, 65, 0, Math.PI*2); ctx.fill();
+                }
+
+                ctx.fillStyle = this.baseColor; ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+                if (this.costume === 'classic') {
+                    ctx.fillStyle = this.id === 1 ? '#00f2fe' : '#ff3366'; ctx.fillRect(this.position.x + (this.facing === 'right' ? 40 : 6), this.position.y + 40, 6, 40);
+                } else if (this.costume === 'monkey') {
+                    ctx.fillStyle = this.baseColor; ctx.fillRect(this.position.x - 6, this.position.y + 6, 8, 12); ctx.fillRect(this.position.x + this.width - 2, this.position.y + 6, 8, 12);
+                    ctx.fillStyle = '#ffea00'; ctx.fillRect(this.position.x + 20, this.position.y + 50, 12, 16);
+                } else if (this.costume === 'boxer') {
+                    ctx.fillStyle = '#ffd700'; ctx.fillRect(this.position.x - 2, this.position.y + 65, this.width + 4, 12);
+                    ctx.fillStyle = '#e60000'; let gloveX = this.facing === 'right' ? this.position.x + this.width - 4 : this.position.x - 14; ctx.fillRect(gloveX, this.position.y + 42, 18, 18);
+                } else if (this.costume === 'bomb') {
+                    ctx.fillStyle = '#ff3300'; ctx.fillRect(this.position.x + 22, this.position.y - 12, 8, 12);
+                    ctx.fillStyle = (globalFrameCount % 10 < 5) ? '#fff700' : '#ff3300'; ctx.fillRect(this.position.x + 24, this.position.y - 18, 4, 6);
+                } else if (this.costume === 'golem') {
+                    ctx.fillStyle = '#4facfe'; ctx.fillRect(this.position.x + 10, this.position.y + 40, 32, 6); ctx.fillRect(this.position.x + 23, this.position.y + 46, 6, 25);
+                    ctx.fillStyle = '#555d6b'; ctx.fillRect(this.position.x - 4, this.position.y + 25, 8, 18); ctx.fillRect(this.position.x + this.width - 4, this.position.y + 25, 8, 18);
+                }
+
+                ctx.fillStyle = '#111116'; ctx.fillRect(this.position.x - 1, this.position.y + 12, this.width + 2, 22);
+                ctx.fillStyle = this.costume === 'golem' ? '#00f2fe' : (this.costume === 'bomb' ? '#ff3300' : '#fff');
+                let eyeX = this.facing === 'right' ? this.position.x + 30 : this.position.x + 6;
+                ctx.fillRect(eyeX, this.position.y + 18, 16, 8);
+                ctx.fillStyle = '#000'; ctx.fillRect(this.facing === 'right' ? eyeX + 10 : eyeX + 2, this.position.y + 18, 4, 8);
+
+                if (this.isAttacking) {
+                    ctx.save(); ctx.globalAlpha = (12 - this.attackTimer) / 12;
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath();
+                    let arcX = this.facing === 'right' ? this.position.x + this.width : this.position.x;
+                    ctx.arc(arcX, this.position.y + 50, 55, this.facing === 'right' ? -Math.PI/3 : Math.PI*2/3, this.facing === 'right' ? Math.PI/3 : Math.PI*4/3);
+                    ctx.stroke(); ctx.restore();
+                }
+            }
+
+            update() {
+                this.draw();
+                if (this.isAttacking) { this.attackTimer++; if (this.attackTimer > 12) this.isAttacking = false; }
+                if (this.ultActive && this.costume === 'classic' && ++this.ultTimer > 180) { this.ultActive = false; this.ultImmune = false; }
+
+                this.attackBox.position.x = this.facing === 'right' ? this.position.x + 15 : this.position.x - 50;
+                this.attackBox.position.y = this.position.y + 30;
+                this.position.x += this.velocity.x; this.position.y += this.velocity.y;
+
+                if (this.position.y + this.height + this.velocity.y >= canvas.height - 25) {
+                    this.velocity.y = 0; this.position.y = canvas.height - 25 - this.height;
+                } else { this.velocity.y += currentGravity; }
+
+                if (this.position.x < 0) this.position.x = 0;
+                if (this.position.x + this.width > canvas.width) this.position.x = canvas.width - this.width;
+
+                if (selectedStage === 'lava' && lavaActive && this.position.y === canvas.height - 25 - this.height && !gameOver) {
+                    if (!this.ultImmune) { this.health -= 0.3; updateHealthBarUI(this.id, this.health); }
+                }
+            }
+
+            attack() {
+                if (!this.attackCooldown && !gameOver && gameActive) {
+                    this.isAttacking = true; this.attackTimer = 0; this.attackCooldown = true;
+                    playSound('hit'); setTimeout(() => { this.attackCooldown = false; }, 300);
+                }
+            }
+
+            useUltimate() {
+                if (this.energy >= 100 && !gameOver && gameActive) {
+                    this.energy = 0; document.getElementById(this.id === 1 ? 'p1-energy' : 'p2-energy').style.width = '0%';
+                    
+                    if (this.costume === 'bomb') {
+                        playSound('explosion'); screenShakeTime = 25;
+                        createParticles(this.position.x + this.width/2, this.position.y + this.height/2, '#ff5500', 30);
+                        this.health -= 8; updateHealthBarUI(this.id, this.health);
+                        let opponent = this.id === 1 ? player2 : player1;
+                        let dist = Math.abs((this.position.x + this.width/2) - (opponent.position.x + opponent.width/2));
+                        if (dist < 180 && !opponent.ultImmune) {
+                            opponent.health -= 35; opponent.velocity.y = -8;
+                            opponent.velocity.x = this.position.x < opponent.position.x ? 10 : -10;
+                            updateHealthBarUI(opponent.id, opponent.health);
+                        }
+                    } else if (this.costume === 'golem') {
+                        playSound('explosion'); screenShakeTime = 20;
+                        let opponent = this.id === 1 ? player2 : player1;
+                        for(let i = 0; i < canvas.width; i += 80) {
+                            groundSpikes.push({ x: i, y: canvas.height - 25, h: 0, maxH: 40, stage: 'rise' });
+                        }
+                        if (opponent.position.y >= canvas.height - 25 - opponent.height - 5 && !opponent.ultImmune) {
+                            opponent.health -= 15; opponent.velocity.y = -16;
+                            updateHealthBarUI(opponent.id, opponent.health);
+                            createParticles(opponent.position.x + opponent.width/2, canvas.height - 30, '#757d8a', 15);
+                        }
+                    } else {
+                        playSound('ultimate'); screenShakeTime = 15;
+                        if (this.costume === 'classic') { this.ultActive = true; this.ultImmune = true; } 
+                        else if (this.costume === 'monkey') {
+                            let target = this.id === 1 ? player2 : player1;
+                            for (let i = 0; i < 3; i++) activeProjectiles.push({ x: target.position.x + (i * 20) - 20, y: -20 - (i * 40), vy: 6, radius: 8, color: '#ffea00', ownerId: this.id });
+                        } else if (this.costume === 'boxer') {
+                            let opponent = this.id === 1 ? player2 : player1;
+                            if (Math.abs(this.position.x - opponent.position.x) < 280 && !opponent.ultImmune) {
+                                opponent.health -= 20; opponent.velocity.y = -10; opponent.velocity.x = this.position.x < opponent.position.x ? 12 : -12;
+                                updateHealthBarUI(opponent.id, opponent.health);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let player1, player2;
+
+        function updateGameElements() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+                if (p.alpha <= 0) particles.splice(i, 1);
+                else { ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.radius, p.radius); ctx.restore(); }
+            }
+            for (let i = activeProjectiles.length - 1; i >= 0; i--) {
+                let proj = activeProjectiles[i]; proj.y += proj.vy;
+                ctx.fillStyle = proj.color; ctx.fillRect(proj.x, proj.y, proj.radius * 2, proj.radius);
+                let target = proj.ownerId === 1 ? player2 : player1;
+                if (proj.y >= canvas.height - 35) activeProjectiles.splice(i, 1);
+                else if (proj.x >= target.position.x && proj.x <= target.position.x + target.width && proj.y >= target.position.y && proj.y <= target.position.y + target.height) {
+                    if (!target.ultImmune) { target.health -= 12; updateHealthBarUI(target.id, target.health); createParticles(target.position.x + 25, target.position.y + 30, '#ffbb00'); }
+                    activeProjectiles.splice(i, 1);
+                }
+            }
+            for (let i = groundSpikes.length - 1; i >= 0; i--) {
+                let spike = groundSpikes[i];
+                if (spike.stage === 'rise') { spike.h += 4; if (spike.h >= spike.maxH) spike.stage = 'fall'; }
+                else { spike.h -= 3; if (spike.h <= 0) { groundSpikes.splice(i, 1); continue; } }
+                ctx.fillStyle = '#4c535e'; ctx.fillRect(spike.x, spike.y - spike.h, 30, spike.h);
+            }
+            if (selectedStage === 'colosseum' && gameActive && !gameOver) {
+                if (globalFrameCount % 350 === 0 && !colosseumItem) {
+                    colosseumItem = { x: Math.random() * 600 + 100, y: 0, w: 16, h: 16, vy: 3 };
+                }
+                if (colosseumItem) {
+                    colosseumItem.y += colosseumItem.vy; if (colosseumItem.y >= canvas.height - 41) colosseumItem.y = canvas.height - 41;
+                    ctx.fillStyle = (globalFrameCount % 8 < 4) ? '#ffd700' : '#ffaa00'; ctx.fillRect(colosseumItem.x, colosseumItem.y, colosseumItem.w, colosseumItem.h);
+                    ctx.strokeStyle = '#fff'; ctx.strokeRect(colosseumItem.x, colosseumItem.y, colosseumItem.w, colosseumItem.h);
+                    [player1, player2].forEach(p => {
+                        if (colosseumItem && colosseumItem.x + colosseumItem.w >= p.position.x && colosseumItem.x <= p.position.x + p.width &&
+                            colosseumItem.y + colosseumItem.h >= p.position.y && colosseumItem.y <= p.position.y + p.height) {
+                            p.energy = Math.min(100, p.energy + 20);
+                            document.getElementById(p.id === 1 ? 'p1-energy' : 'p2-energy').style.width = p.energy + '%';
+                            createParticles(colosseumItem.x + 8, colosseumItem.y + 8, '#ffd700', 12); colosseumItem = null;
+                        }
+                    });
+                }
+            }
+        }
+
+        function updateMoonStageMechanics() {
+            if (selectedStage !== 'moon' || !gameActive || gameOver) return;
+            moonTimer++;
+            if (moonState === 'idle' && moonTimer > 400) { moonState = 'warning'; moonTimer = 0; }
+            else if (moonState === 'warning' && moonTimer > 120) { moonState = 'attack'; moonTimer = 0; playSound('explosion'); screenShakeTime = 25; }
+            else if (moonState === 'attack' && moonTimer > 60) { moonState = 'idle'; moonTimer = 0; }
+        }
+
+        function drawMonster() {
+            if (selectedStage === 'moon' && moonState === 'attack') {
+                ctx.fillStyle = 'rgba(255, 0, 55, 0.85)'; ctx.fillRect(monsterX, 0, monsterWidth, canvas.height - 25);
+                [player1, player2].forEach(player => {
+                    if (player.position.x + player.width >= monsterX && player.position.x <= monsterX + monsterWidth && !gameOver && !player.ultImmune) {
+                        player.health -= 0.7; updateHealthBarUI(player.id, player.health);
+                    }
+                });
+            }
+        }
+
+        function updateAI() {
+            if (gameOver || !gameActive) return;
+            const distanceX = player1.position.x - player2.position.x;
+            player2.facing = distanceX > 0 ? 'right' : 'left';
+            let speed = botDifficulty === 'easy' ? 3 : (botDifficulty === 'medium' ? 4.5 : 6);
+            if (Math.abs(distanceX) > 60) player2.velocity.x = distanceX > 0 ? speed : -speed;
+            else { player2.velocity.x = 0; if (Math.random() < (botDifficulty === 'easy' ? 0.03 : 0.15)) player2.attack(); }
+            if (player2.energy >= 100 && Math.abs(distanceX) < 160) player2.useUltimate();
+        }
+
+        function boxCollision({ box1, box2 }) {
+            return (box1.attackBox.position.x + box1.attackBox.width >= box2.position.x && box1.attackBox.position.x <= box2.position.x + box2.width && box1.attackBox.position.y + box1.attackBox.height >= box2.position.y && box1.attackBox.position.y <= box2.position.y + box2.height);
+        }
+
+        function animate() {
+            window.requestAnimationFrame(animate); globalFrameCount++;
+            ctx.save();
+            if (screenShakeTime > 0) { ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8); screenShakeTime--; }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground(); updateMoonStageMechanics(); drawMonster();
+            
+            if (selectedStage === 'lava') {
+                if (gameActive && !gameOver) { if(++lavaTimer > 350) { lavaActive = true; if(lavaTimer > 470) { lavaActive = false; lavaTimer = 0; } } }
+                ctx.fillStyle = lavaActive ? ((Math.floor(globalFrameCount / 6) % 2 === 0) ? '#ff3c00' : '#ff8800') : '#441100';
+                ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
+            } else {
+                ctx.fillStyle = selectedStage === 'colosseum' ? '#423421' : (selectedStage === 'moon' ? '#2e3142' : '#110e1c'); 
+                ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
+            }
+
+            if (gameActive) {
+                player1.update(); player2.update(); updateGameElements();
+                player1.velocity.x = 0; if (keys.a) { player1.velocity.x = -5.5; player1.facing = 'left'; } else if (keys.d) { player1.velocity.x = 5.5; player1.facing = 'right'; }
+                if (gameMode === 'multi') { player2.velocity.x = 0; if (keys.arrowleft) { player2.velocity.x = -5.5; player2.facing = 'left'; } else if (keys.arrowright) { player2.velocity.x = 5.5; player2.facing = 'right'; } } else { updateAI(); }
+
+                if (boxCollision({ box1: player1, box2: player2 }) && player1.isAttacking && player1.attackTimer === 1) {
+                    if (!player2.ultImmune) {
+                        player2.health -= 7; player1.energy = Math.min(100, player1.energy + 14); player2.energy = Math.min(100, player2.energy + 8);
+                        updateHealthBarUI(2, player2.health); document.getElementById('p1-energy').style.width = player1.energy + '%'; document.getElementById('p2-energy').style.width = player2.energy + '%';
+                        createParticles(player2.position.x + 20, player2.position.y + 40, '#00f2fe'); screenShakeTime = 6;
+                    }
+                }
+                if (boxCollision({ box1: player2, box2: player1 }) && player2.isAttacking && player2.attackTimer === 1) {
+                    if (!player1.ultImmune) {
+                        player1.health -= 7; player2.energy = Math.min(100, player2.energy + 14); player1.energy = Math.min(100, player1.energy + 8);
+                        updateHealthBarUI(1, player1.health); document.getElementById('p2-energy').style.width = player2.energy + '%'; document.getElementById('p1-energy').style.width = player1.energy + '%';
+                        createParticles(player1.position.x + 20, player1.position.y + 40, '#ff0055'); screenShakeTime = 6;
+                    }
+                }
+
+                if ((player1.health <= 0 || player2.health <= 0) && !gameOver) {
+                    gameOver = true; document.getElementById('game-over-screen').style.display = 'block'; const winTxt = document.getElementById('winner-text');
+                    const d = langData[currentLang];
+                    if (player1.health <= 0 && player2.health <= 0) { winTxt.textContent = d.draw; winTxt.style.color = "#fff"; }
+                    else if (player1.health <= 0) { winTxt.textContent = gameMode === 'single' ? d.botWin : d.p2Win; winTxt.style.color = "#ff5858"; }
+                    else { winTxt.textContent = d.p1Win; winTxt.style.color = "#00c6ff"; }
+                }
+            }
+            ctx.restore();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if(["arrowup","arrowdown","arrowleft","arrowright","shift"].indexOf(key) > -1) e.preventDefault();
+            if (!gameOver && gameActive) {
+                switch (key) {
+                    case 'a': keys.a = true; break; case 'd': keys.d = true; break;
+                    case 'w': if (player1.velocity.y === 0) { player1.velocity.y = jumpForce; playSound('jump'); } break;
+                    case 'q': player1.attack(); break; case 'e': player1.useUltimate(); break;
+                    case 'arrowleft': if(gameMode === 'multi') keys.arrowleft = true; break; case 'arrowright': if(gameMode === 'multi') keys.arrowright = true; break;
+                    case 'arrowup': if (gameMode === 'multi' && player2.velocity.y === 0) { player2.velocity.y = jumpForce; playSound('jump'); } break;
+                    case 'arrowdown': if(gameMode === 'multi') player2.attack(); break; case 'shift': if(gameMode === 'multi') player2.useUltimate(); break;
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => { const key = e.key.toLowerCase(); switch (key) { case 'a': keys.a = false; break; case 'd': keys.d = false; break; case 'arrowleft': keys.arrowleft = false; break; case 'arrowright': keys.arrowright = false; break; } });
+
+        function selectMode(mode) { gameMode = mode; document.getElementById('main-menu').style.display = 'none'; document.getElementById('costume-menu').style.display = 'block'; document.getElementById('ai-difficulty-box').style.display = mode === 'single' ? 'block' : 'none'; setLanguage(currentLang); }
+        function chooseCostume(pNum, cName) { let prefix = pNum === 1 ? 'p1' : 'p2'; ['classic', 'monkey', 'boxer', 'bomb', 'golem'].forEach(c => document.getElementById(`${prefix}-c-${c}`).classList.remove(pNum === 1 ? 'p1-selected' : 'p2-selected')); document.getElementById(`${prefix}-c-${cName}`).classList.add(pNum === 1 ? 'p1-selected' : 'p2-selected'); if(pNum === 1) p1Costume = cName; else p2Costume = cName; }
+        function chooseDifficulty(level) { ['easy', 'medium', 'hard'].forEach(d => document.getElementById(`diff-${d}`).classList.remove('p2-selected')); document.getElementById(`diff-${level}`).classList.add('p2-selected'); botDifficulty = level; }
+        function goToStageSelect() { document.getElementById('costume-menu').style.display = 'none'; document.getElementById('stage-menu').style.display = 'block'; }
+        function chooseStage(stg) { ['neon', 'lava', 'moon', 'colosseum'].forEach(s => document.getElementById(`stg-${s}`).classList.remove('stage-selected')); document.getElementById(`stg-${stg}`).classList.add('stage-selected'); selectedStage = stg; }
+        
+        function finalizeAndStart() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.getElementById('stage-menu').style.display = 'none'; document.getElementById('ui-container').style.visibility = 'visible';
+            currentGravity = (selectedStage === 'moon') ? 0.35 : 0.65; jumpForce = (selectedStage === 'moon') ? -11 : -15;
+            lavaTimer = 0; lavaActive = false; moonState = 'idle'; moonTimer = 0; colosseumItem = null;
+            particles = []; activeProjectiles = []; groundSpikes = [];
+            player1 = new Player({ id: 1, position: { x: 130, y: 0 }, velocity: { x: 0, y: 0 }, costume: p1Costume });
+            player2 = new Player({ id: 2, position: { x: 610, y: 0 }, velocity: { x: 0, y: 0 }, costume: p2Costume });
+            updateHealthBarUI(1, 100); updateHealthBarUI(2, 100);
+            document.getElementById('p1-energy').style.width = '0%'; document.getElementById('p2-energy').style.width = '0%';
+            setLanguage(currentLang); gameActive = true; canvas.focus();
+        }
+
+        function restartToMenu() { gameOver = false; gameActive = false; globalFrameCount = 0; document.getElementById('game-over-screen').style.display = 'none'; document.getElementById('ui-container').style.visibility = 'hidden'; document.getElementById('main-menu').style.display = 'block'; chooseCostume(1, 'classic'); chooseCostume(2, 'classic'); chooseStage('colosseum'); setLanguage(currentLang); }
+
+        // İlk başlatma Türkçe olsun
+        setLanguage('tr');
+        animate();
+    </script>
+</body>
+</html>
